@@ -17,6 +17,7 @@
 package com.google.ai.edge.gallery
 
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -65,6 +66,25 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    // Debug: Dump all intent extras to see what FCM unloads
+    intent.extras?.let { extras ->
+      for (key in extras.keySet()) {
+        android.util.Log.d(TAG, "onCreate Extra -> Key: $key, Value: ${extras.get(key)}")
+      }
+    }
+
+    // Convert FCM Console data extras to intent data for GalleryNavGraph to pick up
+    intent.getStringExtra("deeplink")?.let { link ->
+      android.util.Log.d(TAG, "onCreate: Found deeplink extra: $link")
+      if (link.startsWith("http://") || link.startsWith("https://")) {
+        val browserIntent =
+          android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
+        startActivity(browserIntent)
+      } else {
+        intent.data = android.net.Uri.parse(link)
+      }
+    }
 
     fun setContent() {
       if (contentSet) {
@@ -156,6 +176,29 @@ class MainActivity : ComponentActivity() {
     }
     // Keep the screen on while the app is running for better demo experience.
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+
+    // Debug: Dump all intent extras to see what FCM unloads
+    intent.extras?.let { extras ->
+      for (key in extras.keySet()) {
+        android.util.Log.d(TAG, "onNewIntent Extra -> Key: $key, Value: ${extras.get(key)}")
+      }
+    }
+
+    intent.getStringExtra("deeplink")?.let { link ->
+      android.util.Log.d(TAG, "onNewIntent: Found deeplink extra: $link")
+      if (link.startsWith("http://") || link.startsWith("https://")) {
+        val browserIntent =
+          android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
+        startActivity(browserIntent)
+      } else {
+        intent.data = android.net.Uri.parse(link)
+      }
+    }
   }
 
   override fun onResume() {
